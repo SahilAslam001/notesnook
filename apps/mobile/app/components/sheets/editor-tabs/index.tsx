@@ -217,14 +217,24 @@ export default function EditorTabs({
         }}
       >
         <Heading size={AppFontSize.lg}>{strings.tabs()}</Heading>
-        <IconButton
-          onPress={() => {
-            useTabStore.getState().newTab();
-            close?.();
-          }}
-          name="plus"
-          color={colors.primary.accent}
-        />
+        <View style={{ flexDirection: "row", gap: 10 }}>
+          <IconButton
+            onPress={() => {
+              useTabStore.getState().clearAllTabs();
+              close?.();
+            }}
+            name="delete-sweep"
+            color={colors.secondary.icon}
+          />
+          <IconButton
+            onPress={() => {
+              useTabStore.getState().newTab();
+              close?.();
+            }}
+            name="plus"
+            color={colors.primary.accent}
+          />
+        </View>
       </View>
 
       <FlatList

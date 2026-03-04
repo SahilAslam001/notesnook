@@ -31,15 +31,18 @@ import SelectionHeader from "../../components/selection-header";
 import { useNavigationFocus } from "../../hooks/use-navigation-focus";
 import { ToastManager, eSubscribeEvent } from "../../services/event-manager";
 import { NavigationProps } from "../../services/navigation";
+import { recentSearchesService } from "../../services/recent-searches";
 import useNavigationStore from "../../stores/use-navigation-store";
 import { eGroupOptionsUpdated, eOnRefreshSearch } from "../../utils/events";
-import { SearchBar } from "./search-bar";
+import { RecentSearches } from "./recent-searches";
+import { SearchBar, SearchBarRef } from "./search-bar";
 export const Search = ({ route, navigation }: NavigationProps<"Search">) => {
   const [results, setResults] = useState<VirtualizedGrouping<Item>>();
   const [loading, setLoading] = useState(false);
   const [searchStatus, setSearchStatus] = useState<string>();
   const currentQuery = useRef<string>(undefined);
   const timer = useRef<NodeJS.Timeout>(undefined);
+  const searchBarRef = useRef<SearchBarRef>(null);
   useNavigationFocus(navigation, {
     onFocus: (prev) => {
       useNavigationStore.getState().setFocusedRouteId(route.name);
@@ -118,6 +121,20 @@ export const Search = ({ route, navigation }: NavigationProps<"Search">) => {
     [route.params?.items, route.params.type]
   );
 
+  const handleSearchSubmit = React.useCallback((query: string) => {
+    if (query?.trim()) {
+      recentSearchesService.saveSearch(query.trim());
+    }
+  }, []);
+
+  const handleRecentSearchSelect = React.useCallback(
+    (query: string) => {
+      searchBarRef.current?.setText(query);
+      onSearch(query);
+    },
+    [onSearch]
+  );
+
   useEffect(() => {
     const onRefreshSearch = (type: string) => {
       if (type === undefined || type === route.params?.type) {
@@ -142,25 +159,32 @@ export const Search = ({ route, navigation }: NavigationProps<"Search">) => {
   return (
     <>
       <SearchBar
+        ref={searchBarRef}
         onChangeText={(query) => {
           clearTimeout(timer.current);
           timer.current = setTimeout(() => {
             onSearch(query);
           }, 500);
         }}
+        onSearchSubmit={handleSearchSubmit}
         loading={loading}
       />
-      <List
-        data={results}
-        dataType={route.params?.type}
-        renderedInRoute={route.name}
-        loading={loading}
-        placeholder={{
-          title: route.name,
-          paragraph: searchStatus || strings.searchInRoute(route.params?.title),
-          loading: strings.searchingFor(currentQuery.current as string)
-        }}
-      />
+      {!currentQuery.current && !loading ? (
+        <RecentSearches onSearchSelect={handleRecentSearchSelect} />
+      ) : (
+        <List
+          data={results}
+          dataType={route.params?.type}
+          renderedInRoute={route.name}
+          loading={loading}
+          placeholder={{
+            title: route.name,
+            paragraph:
+              searchStatus || strings.searchInRoute(route.params?.title),
+            loading: strings.searchingFor(currentQuery.current as string)
+          }}
+        />
+      )}
       <SelectionHeader
         id={route.name}
         items={results}

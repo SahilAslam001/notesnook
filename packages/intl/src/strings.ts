@@ -1508,6 +1508,8 @@ For example:
   searchingFor: (query: string) => t`Searching for ${query}...`,
   typeAKeyword: () => t`Type a keyword`,
   search: () => t`Search`,
+  recentSearches: () => t`Recent searches`,
+  clearAll: () => t`Clear all`,
   enterEmailAddress: () => t`Enter email address`,
   enterValidEmail: () => t`Please enter a valid email address`,
   enterValidPhone: () => t`Please enter a valid phone number with country code`,

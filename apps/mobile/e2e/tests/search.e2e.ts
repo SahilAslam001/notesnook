@@ -33,4 +33,69 @@ describe("Search", () => {
       .isNotVisibleByText("1")
       .run();
   });
+
+  it("Recent searches - save, display, and select", async () => {
+    await TestBuilder.create()
+      .prepare()
+      .createNote()
+      .waitAndTapById("search-header")
+      .typeTextById("search-input", "FirstSearch")
+      .wait(1000)
+      .tapReturnKeyById("search-input")
+      .wait(500)
+      .waitAndTapById("clear-search")
+      .wait(500)
+      .typeTextById("search-input", "SecondSearch")
+      .wait(1000)
+      .tapReturnKeyById("search-input")
+      .wait(500)
+      .waitAndTapById("clear-search")
+      .wait(1000)
+      .isVisibleByText("Recent searches")
+      .isVisibleByText("SecondSearch")
+      .isVisibleByText("FirstSearch")
+      .run();
+  });
+
+  it("Recent searches - delete individual search", async () => {
+    await TestBuilder.create()
+      .prepare()
+      .createNote()
+      .waitAndTapById("search-header")
+      .typeTextById("search-input", "TestQuery")
+      .wait(1000)
+      .tapReturnKeyById("search-input")
+      .wait(500)
+      .waitAndTapById("clear-search")
+      .wait(1000)
+      .isVisibleByText("TestQuery")
+      .waitAndTapById("delete-recent-search-0")
+      .wait(500)
+      .isNotVisibleByText("TestQuery")
+      .run();
+  });
+
+  it("Recent searches - clear all", async () => {
+    await TestBuilder.create()
+      .prepare()
+      .createNote()
+      .waitAndTapById("search-header")
+      .typeTextById("search-input", "Query1")
+      .wait(1000)
+      .tapReturnKeyById("search-input")
+      .wait(500)
+      .waitAndTapById("clear-search")
+      .wait(500)
+      .typeTextById("search-input", "Query2")
+      .wait(1000)
+      .tapReturnKeyById("search-input")
+      .wait(500)
+      .waitAndTapById("clear-search")
+      .wait(1000)
+      .isVisibleByText("Recent searches")
+      .waitAndTapByText("Clear all")
+      .wait(500)
+      .isNotVisibleByText("Recent searches")
+      .run();
+  });
 });

@@ -176,6 +176,7 @@ export type TabStore = {
     options: Omit<Partial<TabItem>, "id">
   ) => void;
   removeTab: (index: string) => void;
+  clearAllTabs: () => void;
   moveTab: (index: number, toIndex: number) => void;
   newTab: (options?: Omit<Partial<TabItem>, "id">) => string;
   focusTab: (id: string) => void;
@@ -419,6 +420,39 @@ export const useTabStore = create<TabStore, any>(
           }
           syncTabs();
         }
+      },
+      clearAllTabs: () => {
+        // Get all tabs except pinned ones
+        const unpinnedTabs = get().tabs.filter((t) => !t.pinned);
+
+        // Remove all unpinned tabs' sessions
+        unpinnedTabs.forEach((tab) => {
+          history.remove(tab.id);
+          const tabSessions = tabSessionHistory.getTabHistory(tab.id);
+          tabSessions.back.forEach((id) => TabSessionStorage.remove(id));
+          tabSessions.forward.forEach((id) => TabSessionStorage.remove(id));
+          tabSessionHistory.clearStackForTab(tab.id);
+        });
+
+        // Keep only pinned tabs
+        const pinnedTabs = get().tabs.filter((t) => t.pinned);
+
+        // If no tabs remain, create a new empty tab
+        if (pinnedTabs.length === 0) {
+          const id = getId();
+          set({
+            tabs: [{ id: id }]
+          });
+          get().newTabSession(id);
+          get().focusTab(id);
+        } else {
+          set({
+            tabs: pinnedTabs
+          });
+          // Focus the first pinned tab
+          get().focusTab(pinnedTabs[0].id);
+        }
+        syncTabs();
       },
       newTab: (options) => {
         const id = getId();

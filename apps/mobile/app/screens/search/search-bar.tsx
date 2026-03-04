@@ -19,7 +19,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import { strings } from "@notesnook/intl";
 import { useThemeColors } from "@notesnook/theme";
-import React, { useRef, useState } from "react";
+import React, { useImperativeHandle, useRef, useState } from "react";
 import { View } from "react-native";
 import { TextInput } from "react-native-gesture-handler";
 import { IconButton } from "../../components/ui/icon-button";
@@ -28,23 +28,46 @@ import useNavigationStore from "../../stores/use-navigation-store";
 import { useSelectionStore } from "../../stores/use-selection-store";
 import { AppFontSize } from "../../utils/size";
 import { DefaultAppStyles } from "../../utils/styles";
-export const SearchBar = ({
-  onChangeText,
-  loading
-}: {
-  onChangeText: (value: string) => void;
-  loading?: boolean;
-}) => {
+
+export interface SearchBarRef {
+  setText: (text: string) => void;
+}
+
+export const SearchBar = React.forwardRef<
+  SearchBarRef,
+  {
+    onChangeText: (value: string) => void;
+    loading?: boolean;
+    onSearchSubmit?: (value: string) => void;
+  }
+>(({ onChangeText, onSearchSubmit }, ref) => {
   const [clearButton, setClearButton] = useState(false);
+  const [value, setValue] = useState("");
   const selectionMode = useSelectionStore((state) => state.selectionMode);
   const isFocused = useNavigationStore(
     (state) => state.focusedRouteId === "Search"
   );
   const { colors } = useThemeColors();
   const inputRef = useRef<TextInput>(null);
-  const _onChangeText = (value: string) => {
-    onChangeText(value);
-    setClearButton(!!value);
+
+  useImperativeHandle(ref, () => ({
+    setText: (text: string) => {
+      setValue(text);
+      setClearButton(!!text);
+      onChangeText(text);
+    }
+  }));
+
+  const _onChangeText = (newValue: string) => {
+    setValue(newValue);
+    onChangeText(newValue);
+    setClearButton(!!newValue);
+  };
+
+  const handleSubmit = () => {
+    if (value && onSearchSubmit) {
+      onSearchSubmit(value);
+    }
   };
 
   return selectionMode && isFocused ? null : (
@@ -89,8 +112,10 @@ export const SearchBar = ({
             paddingTop: 0,
             paddingBottom: 0
           }}
+          value={value}
           autoFocus
           onChangeText={_onChangeText}
+          onSubmitEditing={handleSubmit}
           placeholder={strings.typeAKeyword()}
           textContentType="none"
           returnKeyLabel={strings.search()}
@@ -108,6 +133,7 @@ export const SearchBar = ({
             testID="clear-search"
             bottom={10}
             onPress={() => {
+              setValue("");
               inputRef.current?.clear();
               onChangeText("");
               setClearButton(false);
@@ -119,4 +145,4 @@ export const SearchBar = ({
       </View>
     </View>
   );
-};
+});
